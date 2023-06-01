@@ -167,7 +167,7 @@ if 'mooc1' in args.train:
 
 if 'stackoverflow' in args.train:
     dsets.append('stackoverflow')
-if 'TEST' n args.train:
+if 'TEST' in args.train:
     dsets.append('TEST')
 
 comments.append(''.join(dsets))
@@ -277,7 +277,7 @@ from notebooks.evaluate.metrics4rec import evaluate_all
 
 
 
-args.load = "./snap/TEST/Epoch10.pth"
+args.load = "./snap/TEST/Epoch01.pth"
 
 # Load Checkpoint
 from src.utils import load_state_dict, LossMeter, set_global_logging_level
