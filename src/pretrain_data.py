@@ -15,7 +15,7 @@ from torch.utils.data.distributed import DistributedSampler
 from copy import deepcopy
 
 from transformers import T5Tokenizer, T5TokenizerFast
-from tokenization import P5Tokenizer, P5TokenizerFast
+from src.tokenization import P5Tokenizer, P5TokenizerFast
 
 def load_json(file_path):
     with open(file_path, "r") as f:
@@ -51,31 +51,7 @@ class P5_Amazon_Dataset(Dataset):
         
         print('Data sources: ', split.split(','))
         self.mode = mode
-        if self.mode == 'train':
-            self.review_data = load_pickle(os.path.join('data', split, 'review_splits.pkl'))['train']
-            self.exp_data = load_pickle(os.path.join('data', split, 'exp_splits.pkl'))['train']
-            if self.rating_augment:
-                self.rating_data = load_pickle(os.path.join('data', split, 'rating_splits_augmented.pkl'))['train']
-            else:
-                self.rating_data = self.review_data
-        elif self.mode == 'val':
-            self.review_data = load_pickle(os.path.join('data', split, 'review_splits.pkl'))['val']
-            self.exp_data = load_pickle(os.path.join('data', split, 'exp_splits.pkl'))['val']
-            if self.rating_augment:
-                self.rating_data = load_pickle(os.path.join('data', split, 'rating_splits_augmented.pkl'))['val']
-            else:
-                self.rating_data = self.review_data
-        elif self.mode == 'test':
-            self.review_data = load_pickle(os.path.join('data', split, 'review_splits.pkl'))['test']
-            self.exp_data = load_pickle(os.path.join('data', split, 'exp_splits.pkl'))['test']
-            if self.rating_augment:
-                self.rating_data = load_pickle(os.path.join('data', split, 'rating_splits_augmented.pkl'))['test']
-            else:
-                self.rating_data = self.review_data
-            self.zeroshot_exp_data = load_pickle(os.path.join('data', 'beauty', 'zeroshot_exp_splits.pkl')) # change to dataset to be transferred (e.g., 'beauty')
-        else:
-            raise NotImplementedError
-            
+                    
         self.sequential_data = ReadLineFromFile(os.path.join('data', split, 'sequential_data.txt'))
         item_count = defaultdict(int)
         user_items = defaultdict()
@@ -97,21 +73,21 @@ class P5_Amazon_Dataset(Dataset):
         if self.mode == 'test':
             self.negative_samples = ReadLineFromFile(os.path.join('data', split, 'negative_samples.txt'))
             
-        datamaps = load_json(os.path.join('data', split, 'datamaps.json'))
-        self.user2id = datamaps['user2id']
-        self.item2id = datamaps['item2id']
-        self.user_list = list(datamaps['user2id'].keys())
-        self.item_list = list(datamaps['item2id'].keys())
-        self.id2item = datamaps['id2item']
+        #datamaps = load_json(os.path.join('data', split, 'datamaps.json'))
+        #self.user2id = datamaps['user2id']
+        #self.item2id = datamaps['item2id']
+        #self.user_list = list(datamaps['user2id'].keys())
+        #self.item_list = list(datamaps['item2id'].keys())
+        #self.id2item = datamaps['id2item']
         
-        self.user_id2name = load_pickle(os.path.join('data', split, 'user_id2name.pkl'))
+        #self.user_id2name = load_pickle(os.path.join('data', split, 'user_id2name.pkl'))
         
-        self.meta_data = []
-        for meta in parse(os.path.join('data', split, 'meta.json.gz')):
-            self.meta_data.append(meta)
-        self.meta_dict = {}
-        for i, meta_item in enumerate(self.meta_data):
-            self.meta_dict[meta_item['asin']] = i
+        #self.meta_data = []
+        #for meta in parse(os.path.join('data', split, 'meta.json.gz')):
+        #    self.meta_data.append(meta)
+        #self.meta_dict = {}
+        #for i, meta_item in enumerate(self.meta_data):
+        #    self.meta_dict[meta_item['asin']] = i
             
         print('compute_datum_info')
         self.total_length = 0
@@ -329,16 +305,25 @@ class P5_Amazon_Dataset(Dataset):
             sequential_datum = self.sequential_data[datum_idx]
             sequence = sequential_datum.split()
             user_id = sequence[0]
-            user_desc = self.user_id2name[user_id]
+            #user_desc = self.user_id2name[user_id]
+            user_desc = 'user_'+str(user_id)
             if self.mode == 'train':
-                end_candidates = [_ for _ in range(max(2, len(sequence) - 6), len(sequence) - 3)]
-                end_index = random.randint(0, len(end_candidates)-1)
-                end_pos = end_candidates[end_index]
-                start_candidates = [_ for _ in range(1, min(4, end_pos))]
-                start_index = random.randint(0, len(start_candidates)-1)
-                start_pos = start_candidates[start_index]
-                purchase_history = sequence[start_pos:end_pos+1] # sample a history sequence from the full user purchase history
-                target_item = sequence[end_pos+1]
+                try:
+                    end_candidates = [_ for _ in range(max(2, len(sequence) - 6), len(sequence) - 3)]
+                    end_index = random.randint(0, len(end_candidates)-1)
+                    end_pos = end_candidates[end_index]
+                    start_candidates = [_ for _ in range(1, min(4, end_pos))]
+                    start_index = random.randint(0, len(start_candidates)-1)
+                    start_pos = start_candidates[start_index]
+                    purchase_history = sequence[start_pos:end_pos+1] # sample a history sequence from the full user purchase history
+                    target_item = sequence[end_pos+1]
+                except:
+                    purchase_history = sequence[1:-2]
+                    target_item = sequence[-2]
+
+               # print('purchase hist', purchase_history)
+               # print('target_item', target_item)
+                #x = 1/0
             elif self.mode == 'val':
                 purchase_history = sequence[1:-2]
                 target_item = sequence[-2]
@@ -1765,7 +1750,7 @@ def get_loader(args, task_list, sample_numbers, split='toys', mode='train',
             rating_augment=False
         )
     else:
-        from all_amazon_templates import all_tasks as task_templates
+        from src.all_amazon_templates import all_tasks as task_templates
 
         dataset = P5_Amazon_Dataset(
             task_templates,

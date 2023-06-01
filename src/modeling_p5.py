@@ -54,7 +54,7 @@ class JointEncoder(T5Stack):
         whole_word_ids=None,
         attention_mask=None,
         inputs_embeds=None,
-        head_mask=None,
+        #head_mask=None,
         past_key_values=None,
         use_cache=None,
         output_attentions=None,
@@ -86,6 +86,7 @@ class JointEncoder(T5Stack):
             past_key_values = [None] * len(self.block)
 
         # Prepare head mask if needed
+        head_mask = None
         head_mask = self.get_head_mask(head_mask, self.config.num_layers)
         present_key_value_states = () if use_cache else None
         all_hidden_states = () if output_hidden_states else None
@@ -120,7 +121,7 @@ class JointEncoder(T5Stack):
                     encoder_hidden_states=None,
                     encoder_attention_mask=None,
                     encoder_decoder_position_bias=None,
-                    head_mask=head_mask[i],
+                    #head_mask=head_mask[i],
                     past_key_value=past_key_value,
                     use_cache=use_cache,
                     output_attentions=output_attentions,
@@ -133,7 +134,7 @@ class JointEncoder(T5Stack):
                 # We share the position biases between the layers - the first layer store them
                 # layer_outputs = hidden-states, key-value-states (self-attention weights),
                 # (self-attention position bias), (cross-attention weights), (cross-attention position bias)
-                position_bias = layer_outputs[2]
+                position_bias = layer_outputs[1]
 
                 # append next layer key value states
                 if use_cache:
@@ -268,7 +269,7 @@ class P5(T5ForConditionalGeneration):
                 whole_word_ids=whole_word_ids,
                 attention_mask=attention_mask,
                 inputs_embeds=inputs_embeds,
-                head_mask=head_mask,
+                #head_mask=head_mask,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
                 return_dict=return_dict,

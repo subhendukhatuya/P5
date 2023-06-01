@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from modeling_p5 import P5
+from src.modeling_p5 import P5
 
 class P5Pretraining(P5):
     def __init__(self, config):

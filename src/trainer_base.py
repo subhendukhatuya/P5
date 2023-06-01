@@ -15,7 +15,7 @@ import logging
 import shutil
 from pprint import pprint
 
-from utils import load_state_dict, LossMeter, set_global_logging_level
+from src.utils import load_state_dict, LossMeter, set_global_logging_level
 from pprint import pformat
 
 proj_dir = Path(__file__).resolve().parent.parent

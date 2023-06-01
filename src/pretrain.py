@@ -19,6 +19,8 @@ from pretrain_data import get_loader
 from utils import LossMeter
 from dist_utils import reduce_dict
 
+#os.environ['CUDA_LAUNCH_BLOCKING'] = 1
+
 _use_native_amp = False
 _use_apex = False
 
@@ -133,6 +135,9 @@ class Trainer(TrainerBase):
                 epoch_results[f'{loss_name}_count'] = 0
 
             for step_i, batch in enumerate(self.train_loader):
+
+                #print('batch', batch)
+                #x=1/0
 
                 if self.args.fp16 and _use_native_amp:
                     with autocast():
@@ -330,7 +335,7 @@ class Trainer(TrainerBase):
             return epoch_results
 
 
-def main_worker(gpu, args):
+def main_worker(gpu,args):
     args.gpu = gpu
     args.rank = gpu
     print(f'Process Launching at GPU {gpu}')
@@ -339,7 +344,7 @@ def main_worker(gpu, args):
         torch.cuda.set_device(args.gpu)
         dist.init_process_group(backend='nccl')
 
-    print(f'Building train loader at GPU {gpu}')
+    #print(f'Building train loader at GPU {gpu}')
     # define the prompts used in training
     if args.train == 'yelp':
         train_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
@@ -349,12 +354,14 @@ def main_worker(gpu, args):
         'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
         }
     else:
-        train_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
-        'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12'],
-        'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '3-10', '3-11'],
-        'review': ['4-1', '4-2', '4-3'],
-        'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
+        # train_task_list = {
+        # 'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12']
+        # }
+        train_task_list = {
+        'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6']
         }
+
+
     # define sampling numbers for each group of personalized prompts (see pretrain_data.py)
     # if greater than 1, a data sample will be used for multiple times with different prompts in certain task family
     train_sample_numbers = {'rating': 1, 'sequential': (5, 5, 10), 'explanation': 1, 'review': 1, 'traditional': (10, 5)}
@@ -379,13 +386,15 @@ def main_worker(gpu, args):
         'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
         }
     else:
-        val_task_list = {'rating': ['1-1', '1-2', '1-3', '1-4', '1-5', '1-6', '1-7', '1-8', '1-9'],
-        'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12'],
-        'explanation': ['3-1', '3-2', '3-3', '3-4', '3-5', '3-6', '3-7', '3-8', '3-9', '3-10', '3-11'],
-        'review': ['4-1', '4-2', '4-3'],
-        'traditional': ['5-1', '5-2', '5-3', '5-4', '5-5', '5-6', '5-7']
+        # val_task_list = {
+        # 'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6', '2-7', '2-8', '2-9', '2-10', '2-11', '2-12']
+        # }
+        val_task_list = {
+        'sequential': ['2-1', '2-2', '2-3', '2-4', '2-5', '2-6']
         }
-    val_sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1, 'traditional': (1, 1)}
+    # val_sample_numbers = {'rating': 1, 'sequential': (1, 1, 1), 'explanation': 1, 'review': 1, 'traditional': (1, 1)}
+    val_sample_numbers = {'sequential': (1, 1, 1)}
+
     val_loader = get_loader(
         args,
         val_task_list,
@@ -427,7 +436,15 @@ if __name__ == "__main__":
         dsets.append('sports')
     if 'yelp' in args.train:
         dsets.append('yelp')
+    if 'mooc1' in args.train:
+        dsets.append('mooc1')
+    if 'mooc2' in args.train:
+        dsets.append('mooc2')
     comments.append(''.join(dsets))
+    if 'dunnhumby' in args.train:
+        dsets.append('dunnhumby')
+    if 'stackoverflow' in args.train:
+        dsets.append('stackoverflow')
     if args.backbone:
         comments.append(args.backbone)
     comments.append(''.join(args.losses.split(',')))
@@ -447,4 +464,4 @@ if __name__ == "__main__":
         args.run_name = run_name
 
     if args.distributed:
-        main_worker(args.local_rank, args)
+        main_worker(args.local_rank,args)

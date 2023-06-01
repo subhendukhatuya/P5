@@ -22,7 +22,7 @@ python -m torch.distributed.launch \
         --lr 1e-3 \
         --num_workers 4 \
         --clip_grad_norm 1.0 \
-        --losses 'rating,sequential,explanation,review,traditional' \
+        --losses 'sequential' \
         --backbone 't5-base' \
         --output $output ${@:2} \
         --epoch 10 \
