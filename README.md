@@ -31,6 +31,29 @@ We present a flexible and unified Big Foundation Model for recommendation, which
 2. Download pretrained checkpoints into *snap* folder. If you would like to train your own P5 models, *snap* folder will also be used to store P5 checkpoints.
 
 
+**Data Preparation**
+1. Create a folder data, and inside that make a directory TEST
+2. navigate to prepare_data, run **prepare_data_for_p5.py** changing the line of data source location  111,112,113
+3. Run create_negative_sample.py
+4. Run prepare_progressive_test_data.py
+5. Rename the generated train_p5.txt to sequential_data.txt
+6. Copy generated sequential_data.txt, sequential_data_test.txt, negative_samples.txt to /data/TEST
+
+
+**Training**
+
+
+    ```
+    bash scripts/pretrain_p5_test.sh 1
+    ```
+**Testing**
+
+
+    ```
+    python p5_test.py
+    ```
+
+**Ignore Below Part**
 3. Pretrain with scripts in *scripts* folder, such as
 
     ```
